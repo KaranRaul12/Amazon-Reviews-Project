@@ -112,7 +112,7 @@ else:
         elif row["buying_recommendation"] == "Avoid":
             st.error("Avoid")
         else:
-            st.warning("Good Buy")
+            st.warning("Think Again")
 
         # Charts
         chart_df = pd.DataFrame({
@@ -139,7 +139,7 @@ else:
         st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# CHATBOT (RULE-BASED, STABLE)
+# CHATBOT (RULE-BASED)
 # --------------------------------------------------
 st.markdown("---")
 st.subheader("🤖 Smart Recommendation Assistant")
@@ -150,4 +150,20 @@ user_q = st.text_input(
 )
 
 if user_q:
+    q = user_q.lower()
 
+    if "phone" in q or "mobile" in q:
+        subset = df[df["domain"] == "Electronics"]
+    elif "book" in q:
+        subset = df[df["domain"] == "Books"]
+    elif "cloth" in q or "shirt" in q or "dress" in q:
+        subset = df[df["domain"] == "Clothing"]
+    else:
+        subset = df
+
+    best = subset.sort_values("avg_rating", ascending=False).iloc[0]
+
+    st.success(
+        f"### ✅ Recommended: {best['product_title']}\n\n"
+        f"**Why:** {best['review_summary']}"
+    )

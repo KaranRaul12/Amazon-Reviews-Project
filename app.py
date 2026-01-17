@@ -131,18 +131,50 @@ else:
         else:
             st.warning("Think Again")
 
-        # Charts (Safe Version)
-        chart_df = pd.DataFrame({
-            "Metric": ["Avg Rating", "Avg Sentiment"],
-            "Value": [row["avg_rating"], row["avg_sentiment_score"]]
-        })
+        
+# SENTIMENT DISTRIBUTION PER PRODUCT
+# -------------------------------------------
+product_reviews = df[df["product_title"] == row["product_title"]]
 
-        st.plotly_chart(
-            px.bar(chart_df, x="Metric", y="Value", text="Value"),
-            use_container_width=True
-        )
+pos = (product_reviews["sentiment"] == "Positive").sum()
+neu = (product_reviews["sentiment"] == "Neutral").sum()
+neg = (product_reviews["sentiment"] == "Negative").sum()
 
-        st.markdown("</div>", unsafe_allow_html=True)
+sentiment_df = pd.DataFrame({
+    "Sentiment": ["Positive", "Neutral", "Negative"],
+    "Count": [pos, neu, neg]
+})
+
+# PIE CHART
+st.markdown("<div class='section'>📊 Sentiment Breakdown</div>", unsafe_allow_html=True)
+fig_pie = px.pie(
+    sentiment_df,
+    values="Count",
+    names="Sentiment",
+    color="Sentiment",
+    color_discrete_map={
+        "Positive": "#4CAF50",
+        "Neutral": "#FFC107",
+        "Negative": "#F44336"
+    }
+)
+st.plotly_chart(fig_pie, use_container_width=True)
+
+# BAR CHART
+fig_bar = px.bar(
+    sentiment_df,
+    x="Sentiment",
+    y="Count",
+    color="Sentiment",
+    text="Count",
+    color_discrete_map={
+        "Positive": "#4CAF50",
+        "Neutral": "#FFC107",
+        "Negative": "#F44336"
+    }
+)
+st.plotly_chart(fig_bar, use_container_width=True)
+
 
 # --------------------------------------------------
 # CHATBOT (RULE-BASED)

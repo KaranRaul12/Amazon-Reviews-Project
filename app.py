@@ -47,7 +47,7 @@ h1 {
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("final_ready_dataset_option_C.csv")
+    return pd.read_csv("final_product_dataset.csv")
 
 df = load_data()
 

@@ -182,9 +182,7 @@ else:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-# --------------------------------------------------
 # SMART CHATBOT
-# --------------------------------------------------
 st.markdown("---")
 st.subheader("🤖 Smart Recommendation Assistant")
 
@@ -211,4 +209,5 @@ if user_q:
         f"### ✅ Recommended Product\n\n"
         f"**{best['product_title']}**\n"
         f"- ⭐ Rating: {round(best['avg_rating'], 2)}\n"
-        f"- 🛒 Category: {best[']()
+        f"- 🛒 Category: {best['domain']}"
+    )

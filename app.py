@@ -47,9 +47,23 @@ h1 {
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("final_product_dataset.csv")
+    return pd.read_csv("final_ready_dataset_option_C.csv")
 
 df = load_data()
+
+# --------------------------------------------------
+# AGGREGATE PRODUCT-LEVEL METRICS
+# (because your CSV is review-level)
+# --------------------------------------------------
+df["sentiment"] = df["rating"].apply(lambda r: "Positive" if r >= 4 else "Neutral" if r == 3 else "Negative")
+sentiment_map = {"Positive": 1, "Neutral": 0, "Negative": -1}
+df["sentiment_score"] = df["sentiment"].map(sentiment_map)
+
+product_df = df.groupby(["product_title", "domain"]).agg(
+    avg_rating=("rating", "mean"),
+    review_count=("rating", "count"),
+    avg_sentiment_score=("sentiment_score", "mean"),
+).reset_index()
 
 # --------------------------------------------------
 # HEADER
@@ -69,7 +83,7 @@ with c1:
 with c2:
     domain = st.selectbox("Category", ["All", "Books", "Electronics", "Clothing"])
 
-filtered = df.copy()
+filtered = product_df.copy()
 
 if domain != "All":
     filtered = filtered[filtered["domain"] == domain]
@@ -94,11 +108,14 @@ else:
         with tcol:
             st.markdown(f"### {row['product_title']}")
         with rcol:
-            st.metric("⭐ Rating", round(row["avg_rating"], 2))
+            st.metric("⭐ Avg Rating", round(row["avg_rating"], 2))
 
-        # Summary
+        # Review Count
+        st.caption(f"Total Reviews: {row['review_count']}")
+
+        # Summary placeholder
         st.markdown("<div class='section'>📘 Review Summary</div>", unsafe_allow_html=True)
-        st.write(row["review_summary"])
+        st.write("Users shared mixed feedback based on collected reviews.")
 
         # Sentiment Meter
         st.markdown("<div class='section'>🎛 Sentiment Meter</div>", unsafe_allow_html=True)
@@ -107,34 +124,23 @@ else:
 
         # Buying Guide
         st.markdown("<div class='section'>🎯 Buying Recommendation</div>", unsafe_allow_html=True)
-        if row["buying_recommendation"] == "Must Buy":
+        if row["avg_rating"] >= 4:
             st.success("Must Buy")
-        elif row["buying_recommendation"] == "Avoid":
+        elif row["avg_rating"] < 3:
             st.error("Avoid")
         else:
             st.warning("Think Again")
 
-        # Charts
+        # Charts (Safe Version)
         chart_df = pd.DataFrame({
-            "Sentiment": ["Positive", "Neutral", "Negative"],
-            "Count": [
-                row["positive_reviews"],
-                row["neutral_reviews"],
-                row["negative_reviews"]
-            ]
+            "Metric": ["Avg Rating", "Avg Sentiment"],
+            "Value": [row["avg_rating"], row["avg_sentiment_score"]]
         })
 
-        c1, c2 = st.columns(2)
-        with c1:
-            st.plotly_chart(
-                px.pie(chart_df, values="Count", names="Sentiment"),
-                use_container_width=True
-            )
-        with c2:
-            st.plotly_chart(
-                px.bar(chart_df, x="Sentiment", y="Count", text="Count"),
-                use_container_width=True
-            )
+        st.plotly_chart(
+            px.bar(chart_df, x="Metric", y="Value", text="Value"),
+            use_container_width=True
+        )
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -153,17 +159,17 @@ if user_q:
     q = user_q.lower()
 
     if "phone" in q or "mobile" in q:
-        subset = df[df["domain"] == "Electronics"]
+        subset = product_df[product_df["domain"] == "Electronics"]
     elif "book" in q:
-        subset = df[df["domain"] == "Books"]
+        subset = product_df[product_df["domain"] == "Books"]
     elif "cloth" in q or "shirt" in q or "dress" in q:
-        subset = df[df["domain"] == "Clothing"]
+        subset = product_df[product_df["domain"] == "Clothing"]
     else:
-        subset = df
+        subset = product_df
 
     best = subset.sort_values("avg_rating", ascending=False).iloc[0]
 
     st.success(
         f"### ✅ Recommended: {best['product_title']}\n\n"
-        f"**Why:** {best['review_summary']}"
+        f"**Avg Rating:** {round(best['avg_rating'], 2)}\n\n"
     )
